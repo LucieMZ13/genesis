@@ -3,11 +3,14 @@ package com.engeto.genesis.service;
 import com.engeto.genesis.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -34,6 +37,24 @@ public class UserService {
         return user;
     }
 
+    public User getUserByIDWithDetail(int id) {
+        String sql = "select * from users where id = " + id;
+        User user = jdbcTemplate.queryForObject(sql,
+                new RowMapper<User>() {
+                    @Override
+                    public User mapRow(ResultSet result, int rowNumber) throws SQLException {
+                        User user = new User();
+                        user.setId(result.getInt(id));
+                        user.setName(result.getString("name"));
+                        user.setSurname(result.getString("surname"));
+                        user.setPersonID(result.getString("person_ID"));
+                        user.setUuid(result.getString("uuid"));
+
+                        return user;
+                    }
+                });
+        return user;
+    }
     
     private String getNextIDFromFile(String filename) throws FileNotFoundException {
         Scanner scanner = new Scanner(new BufferedReader(
