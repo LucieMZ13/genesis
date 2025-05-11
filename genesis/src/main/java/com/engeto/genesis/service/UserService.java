@@ -21,20 +21,31 @@ public class UserService {
     @Autowired
     JdbcTemplate jdbcTemplate;
 
-    private static final String PERSON_ID_FILE = "resources/dataPersonId.txt";
+    private static final String PERSON_ID_FILE = "genesis/src/main/resources/dataPersonId.txt";
 
     public User createUser(User user) {
         try {
-        String personID = getNextIDFromFile(PERSON_ID_FILE);
-        user.setPersonID(personID);
-        String uuid = UUID.randomUUID().toString();
-        user.setUuid(uuid);
-        String sql = "insert into users values (?, ?, ?, ?, ?)";
-        jdbcTemplate.update(sql,user.getId(),user.getName(),user.getSurname(),
-                user.getPersonID(), user.getUuid());
+            String personID = getNextIDFromFile(PERSON_ID_FILE);
+
+            String checkSql = "select count(*) from users where person_id = ?";
+            Integer count = jdbcTemplate.queryForObject(checkSql,
+                    Integer.class, personID);
+            if (count != null && count > 0) {
+                throw new IllegalArgumentException("personID "
+                        + personID + " is already assigned to another user.");
+            }
+
+            user.setPersonID(personID);
+            String uuid = UUID.randomUUID().toString();
+            user.setUuid(uuid);
+            String sql = "insert into users values (?, ?, ?, ?, ?)";
+            jdbcTemplate.update(sql, user.getId(), user.getName(), user.getSurname(),
+                    user.getPersonID(), user.getUuid());
         } catch (FileNotFoundException e) {
+            System.err.println("File not found " + e.getMessage());
+        } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
-        }
+    }
         return user;
     }
 
