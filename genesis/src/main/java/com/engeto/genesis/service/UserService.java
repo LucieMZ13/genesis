@@ -7,12 +7,11 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Scanner;
 import java.util.UUID;
 
 @Service
@@ -26,26 +25,17 @@ public class UserService {
     public User createUser(User user) {
         try {
             String personID = getNextIDFromFile(PERSON_ID_FILE);
-
-            String checkSql = "select count(*) from users where person_id = ?";
-            Integer count = jdbcTemplate.queryForObject(checkSql,
-                    Integer.class, personID);
-            if (count != null && count > 0) {
-                throw new IllegalArgumentException("personID "
-                        + personID + " is already assigned to another user.");
-            }
-
             user.setPersonID(personID);
             String uuid = UUID.randomUUID().toString();
             user.setUuid(uuid);
             String sql = "insert into users values (?, ?, ?, ?, ?)";
             jdbcTemplate.update(sql, user.getId(), user.getName(), user.getSurname(),
                     user.getPersonID(), user.getUuid());
-        } catch (FileNotFoundException e) {
-            System.err.println("File not found " + e.getMessage());
-        } catch (IllegalArgumentException e) {
-            System.err.println(e.getMessage());
-    }
+        } catch (IOException e) {
+            System.err.println("Error reading personID file: " + e.getMessage());
+        } catch (IllegalStateException e) {
+            System.err.println("No available personIDs: " + e.getMessage());
+        }
         return user;
     }
 
@@ -81,7 +71,8 @@ public class UserService {
                 user.setUuid(result.getString("uuid"));
                 return user;
             }
-        }); return out;
+        });
+        return out;
     }
 
     public void updateUserNameAndSurname(int id, String name, String surname) {
@@ -93,17 +84,21 @@ public class UserService {
         String sql = "DELETE FROM users WHERE id = ?";
         jdbcTemplate.update(sql, id);
     }
-    
-    private String getNextIDFromFile(String filename) throws FileNotFoundException {
-        Scanner scanner = new Scanner(new BufferedReader(
-                new FileReader(filename)));
-        int lineNumber = 0;
-        String nextIDFromFile = "";
-        while (scanner.hasNextLine()) {
-            String line = scanner.nextLine().trim();
-            lineNumber++;
-            nextIDFromFile = line;
+
+    private String getNextIDFromFile(String filename) throws IOException {
+        try (BufferedReader reader = new BufferedReader(
+                new FileReader(filename))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String trimmedID = line.trim();
+                String checkSql = "select count(*) from users where person_id = ?";
+                Integer count = jdbcTemplate.queryForObject(checkSql,
+                        Integer.class, trimmedID);
+                if (count != null && count == 0) {
+                    return trimmedID;
+                }
+            }
         }
-        return nextIDFromFile;
+        throw new IllegalStateException("No available personIDs in the file.");
     }
 }
