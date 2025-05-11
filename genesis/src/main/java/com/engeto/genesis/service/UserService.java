@@ -45,7 +45,7 @@ public class UserService {
                     @Override
                     public User mapRow(ResultSet result, int rowNumber) throws SQLException {
                         User user = new User();
-                        user.setId(result.getInt(id));
+                        user.setId(result.getInt("id"));
                         user.setName(result.getString("name"));
                         user.setSurname(result.getString("surname"));
                         user.setPersonID(result.getString("person_id"));
@@ -71,6 +71,11 @@ public class UserService {
                 return user;
             }
         }); return out;
+    }
+
+    public void updateUserNameAndSurname(int id, String name, String surname) {
+        String sql = "update users set name = ?, surname = ? where id = ?";
+        jdbcTemplate.update(sql, name, surname, id);
     }
     
     private String getNextIDFromFile(String filename) throws FileNotFoundException {

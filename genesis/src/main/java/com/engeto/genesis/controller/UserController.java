@@ -61,4 +61,16 @@ public class UserController {
                     .collect(Collectors.toList());
         }
     }
+
+    @PutMapping
+    public ResponseEntity<User> updateUser(@RequestBody User user) {
+        if (user.getId() == 0 || user.getName() == null ||
+                user.getSurname() == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        userService.updateUserNameAndSurname(
+                user.getId(), user.getName(), user.getSurname());
+        User updatedUser = userService.getUserByIDWithDetail(user.getId());
+        return ResponseEntity.ok(updatedUser);
+    }
 }
