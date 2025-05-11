@@ -11,6 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -47,13 +48,29 @@ public class UserService {
                         user.setId(result.getInt(id));
                         user.setName(result.getString("name"));
                         user.setSurname(result.getString("surname"));
-                        user.setPersonID(result.getString("person_ID"));
+                        user.setPersonID(result.getString("person_id"));
                         user.setUuid(result.getString("uuid"));
 
                         return user;
                     }
                 });
         return user;
+    }
+
+    public List<User> getAllUsers() {
+        String sql = "select * from users";
+        List<User> out = jdbcTemplate.query(sql, new RowMapper<User>() {
+            @Override
+            public User mapRow(ResultSet result, int rowNumber) throws SQLException {
+                User user = new User();
+                user.setId(result.getInt("id"));
+                user.setName(result.getString("name"));
+                user.setSurname(result.getString("surname"));
+                user.setPersonID(result.getString("person_id"));
+                user.setUuid(result.getString("uuid"));
+                return user;
+            }
+        }); return out;
     }
     
     private String getNextIDFromFile(String filename) throws FileNotFoundException {

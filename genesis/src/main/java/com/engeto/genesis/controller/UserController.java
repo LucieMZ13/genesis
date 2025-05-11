@@ -7,7 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("api/v1/users")
@@ -38,5 +40,25 @@ public class UserController {
             response.put("uuid", user.getUuid());
         }
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping
+    public List<?> getAllUsers(
+            @RequestParam(value = "detail", required = false,
+                    defaultValue = "detail") boolean detail) {
+        List<User> userList = userService.getAllUsers();
+        if (detail) {
+            return userList;
+        } else {
+            return userList.stream()
+                    .map(user -> {
+                        Map<String, Object> simpleUser = new HashMap<>();
+                        simpleUser.put("id", user.getId());
+                        simpleUser.put("name", user.getName());
+                        simpleUser.put("surname", user.getSurname());
+                        return simpleUser;
+                    })
+                    .collect(Collectors.toList());
+        }
     }
 }
