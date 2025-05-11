@@ -73,4 +73,10 @@ public class UserController {
         User updatedUser = userService.getUserByIDWithDetail(user.getId());
         return ResponseEntity.ok(updatedUser);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable int id) {
+        userService.deleteUserById(id);
+        return ResponseEntity.noContent().build();
+    }
 }

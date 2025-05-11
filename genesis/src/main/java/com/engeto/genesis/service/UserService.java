@@ -77,6 +77,11 @@ public class UserService {
         String sql = "update users set name = ?, surname = ? where id = ?";
         jdbcTemplate.update(sql, name, surname, id);
     }
+
+    public void deleteUserById(int id) {
+        String sql = "DELETE FROM users WHERE id = ?";
+        jdbcTemplate.update(sql, id);
+    }
     
     private String getNextIDFromFile(String filename) throws FileNotFoundException {
         Scanner scanner = new Scanner(new BufferedReader(
