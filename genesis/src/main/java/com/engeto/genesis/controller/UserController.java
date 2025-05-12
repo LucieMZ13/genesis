@@ -3,10 +3,13 @@ package com.engeto.genesis.controller;
 import com.engeto.genesis.model.User;
 import com.engeto.genesis.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,9 +31,12 @@ public class UserController {
             @PathVariable int id,
             @RequestParam(value = "detail", required = false,
                     defaultValue = "false") boolean detail) {
-        User user = userService.getUserByIDWithDetail(id);
+        try {
 
-        Map<String, Object> response = new HashMap<>();
+
+        User user = userService.getUserByID(id);
+
+        Map<String, Object> response = new LinkedHashMap<>();
         response.put("id", user.getId());
         response.put("name", user.getName());
         response.put("surname", user.getSurname());
@@ -40,12 +46,15 @@ public class UserController {
             response.put("uuid", user.getUuid());
         }
         return ResponseEntity.ok(response);
+        } catch (EmptyResultDataAccessException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     @GetMapping
     public List<?> getAllUsers(
             @RequestParam(value = "detail", required = false,
-                    defaultValue = "detail") boolean detail) {
+                    defaultValue = "false") boolean detail) {
         List<User> userList = userService.getAllUsers();
         if (detail) {
             return userList;
@@ -70,7 +79,7 @@ public class UserController {
         }
         userService.updateUserNameAndSurname(
                 user.getId(), user.getName(), user.getSurname());
-        User updatedUser = userService.getUserByIDWithDetail(user.getId());
+        User updatedUser = userService.getUserByID(user.getId());
         return ResponseEntity.ok(updatedUser);
     }
 

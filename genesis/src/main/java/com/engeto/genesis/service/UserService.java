@@ -39,7 +39,7 @@ public class UserService {
         return user;
     }
 
-    public User getUserByIDWithDetail(int id) {
+    public User getUserByID(int id) {
         String sql = "select * from users where id = " + id;
         User user = jdbcTemplate.queryForObject(sql,
                 new RowMapper<User>() {
@@ -81,7 +81,7 @@ public class UserService {
     }
 
     public void deleteUserById(int id) {
-        String sql = "DELETE FROM users WHERE id = ?";
+        String sql = "delete from users where id = ?";
         jdbcTemplate.update(sql, id);
     }
 
