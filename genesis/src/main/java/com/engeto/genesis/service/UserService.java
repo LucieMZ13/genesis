@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -23,18 +25,23 @@ public class UserService {
     private static final String PERSON_ID_FILE = "genesis/src/main/resources/dataPersonId.txt";
 
     public User createUser(User user) {
+
+        String personID = user.getPersonID();
+
         try {
-            String personID = getNextIDFromFile(PERSON_ID_FILE);
-            user.setPersonID(personID);
+            if (!personIDExistsInFile(personID)) {
+                throw new IllegalArgumentException();
+            }
+            if (isPersonIDUsed(personID)) {
+                throw new IllegalArgumentException();
+            }
             String uuid = UUID.randomUUID().toString();
             user.setUuid(uuid);
-            String sql = "insert into users values (?, ?, ?, ?, ?)";
+            String sql = "insert into users (id, name, surname, person_id, uuid) values (?, ?, ?, ?, ?)";
             jdbcTemplate.update(sql, user.getId(), user.getName(), user.getSurname(),
                     user.getPersonID(), user.getUuid());
         } catch (IOException e) {
             System.err.println("Error reading personID file: " + e.getMessage());
-        } catch (IllegalStateException e) {
-            System.err.println("No available personIDs: " + e.getMessage());
         }
         return user;
     }
@@ -85,20 +92,16 @@ public class UserService {
         jdbcTemplate.update(sql, id);
     }
 
-    private String getNextIDFromFile(String filename) throws IOException {
-        try (BufferedReader reader = new BufferedReader(
-                new FileReader(filename))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String trimmedID = line.trim();
-                String checkSql = "select count(*) from users where person_id = ?";
-                Integer count = jdbcTemplate.queryForObject(checkSql,
-                        Integer.class, trimmedID);
-                if (count != null && count == 0) {
-                    return trimmedID;
-                }
-            }
-        }
-        throw new IllegalStateException("No available personIDs in the file.");
+    private boolean personIDExistsInFile(String personID) throws IOException {
+        return Files.lines(Paths.get(PERSON_ID_FILE))
+                .anyMatch(line -> line.trim().equals(personID));
     }
+
+    private boolean isPersonIDUsed(String personID) {
+        String sql = "select count(*) from users where person_id = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class,
+                personID);
+        return count != null && count > 0;
+    }
+
 }

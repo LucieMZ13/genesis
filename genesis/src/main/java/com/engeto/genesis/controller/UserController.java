@@ -22,8 +22,13 @@ public class UserController {
     UserService userService;
 
     @PostMapping
-    public User createUser(@RequestBody User user) {
-        return userService.createUser(user);
+    public ResponseEntity<User> createUser(@RequestBody User user) {
+        try {
+            User created = userService.createUser(user);
+            return ResponseEntity.ok(created);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     @GetMapping("/{id}")
