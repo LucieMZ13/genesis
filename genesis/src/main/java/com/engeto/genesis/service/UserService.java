@@ -2,12 +2,10 @@ package com.engeto.genesis.service;
 
 import com.engeto.genesis.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
-
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -88,6 +86,12 @@ public class UserService {
     }
 
     public void deleteUserById(int id) {
+        String checkSql = "select count(*) from users where id = ?";
+        Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, id);
+
+        if (count == null || count == 0) {
+            throw new EmptyResultDataAccessException(1);
+        }
         String sql = "delete from users where id = ?";
         jdbcTemplate.update(sql, id);
     }
